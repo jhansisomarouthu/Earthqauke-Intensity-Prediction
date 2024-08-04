@@ -1,286 +1,39 @@
-rm(list=ls())
+The "Earthquake Dataset" is a compilation of information about earthquakes from around the globe. The database contains the timing, location, magnitude, and depth of each earthquake, as well as other facts such as the number of persons impacted and the economic effect of the occurrence. The European-Mediterranean Seismological Centre (EMSC) and the United States Geological Survey (USGS) both provided publicly available data that was used to create the dataset. The dataset is designed for use by academics, analysts, and anyone interested in investigating earthquake patterns and trends, as well as developing models and prediction tools for earthquake forecasting and response.
 
-cat("\014")
+GOAL OF THE PROJECT:
 
+The goal of the project is to predict the areas at higher risk of earthquakes and estimate the likelihood of future seismic events. Ultimately, the aim is to develop a reliable and accurate predictive model that can help governments and emergency services prepare for and respond to earthquakes, potentially saving lives and reducing damage. We will explore the data to answer the following questions.
 
-# load in the data file
-data <- read.csv("earthquake_data.csv", stringsAsFactors = FALSE)
+The project will involve several stages, including data cleaning and preparation, feature engineering, model building and validation.
+Data Exploration – we will analyze the data using statistical measures and visual aids to explore the following questions:
+1. What are the primary factors of the frequency and intensity of earthquakes?
+2. The correlation between the magnitude, tsunami, date/time, depth, latitude/longitude, and other characteristics of the earthquake (column: cdi),
+Prediction Model – we will utilize various classification models to anticipate the severity of the earthquake:
+1. Data Understanding and Preparation: we will carry out tasks such as data cleaning, merging, normalization, exploration, handling missing values, and feature engineering.
+2. Modeling: we will use classification algorithms to forecast the intensity of earthquakes (as indicated by the "cdi" column), using the important attributes identified during the data exploration process.
+3. Validation: Validate the model performance on the test data and generate performance metrics.
+4. Conclusion: What do we learn from the model in earthquake prediction? How can we use the predictive model to inform disaster response efforts and prioritize resources in areas at higher risk of earthquakes at times, to mitigate potential damage and save lives?
 
-summary(data)
+ADVANTAGES:
 
-str(data)
+By identifying the models that perform best for each class of intensity, we can create a more nuanced understanding of earthquake risk. This can help governments and emergency services to better prioritize their resources and efforts in areas that are at higher risk of experiencing earthquakes of a particular intensity. For example, if we know that logistic regression is better at predicting high intensity earthquakes, then emergency services can focus their resources on areas that are at higher risk of experiencing such events.
 
-hist(data$cdi, breaks = 10)
+By identification of models that perform best overall, we can develop a more accurate and reliable predictive model for earthquakes. This can help to save lives and reduce damage by enabling governments and emergency services to better prepare for and respond to earthquakes.
 
-# change cdi to factor
+From the findings we can highlight the importance of considering multiple metrics when evaluating the performance of classification models. We can acquire a more thorough knowledge of how well a model is working and make more educated judgments about which model to utilize for a given application by taking into account both accuracy and specificity (as well as other metrics).
 
-data$cdi <- cut(data$cdi, breaks = c(-1,3,6,10), labels = c("-1", "0", "1"))
 
-# Visualization
+CONCLUSION AND FUTURE SCOPE:
 
-hist(data$magnitude, breaks = 10)
+The predictive model developed using above techniques can be utilized to inform disaster response efforts and prioritize resources in areas at higher risk of earthquakes, as follows:
+Early Warning System: The model can be integrated with an early warning system to provide alerts and notifications to the residents and authorities in the areas predicted to have higher earthquake risks.
 
-hist(data$depth, breaks = 10)
+Evacuation Planning: The model can be used to identify the areas at higher risk of earthquakes and develop evacuation plans accordingly. The model can also help in estimating the number of people likely to be affected by the earthquake and the resources needed for their evacuation.
 
-hist(data$sig, breaks = 10)
+Resource Allocation: The model can help in prioritizing resources such as emergency response teams, medical supplies, and rescue equipment to areas predicted to have a higher risk of earthquakes.
 
-#Checking for Outliers 
+Infrastructure Development: The model can be used to identify the areas with higher earthquake risks and prioritize infrastructure development efforts such as strengthening of buildings, bridges, and other critical infrastructure to reduce the potential damage and save lives.
 
-boxplot(data$magnitude, main = "Magnitude")
+Insurance Planning: The model can assist insurance companies in pricing the earthquake insurance policies more accurately by predicting the areas with higher risks of earthquakes.
 
-boxplot(data$depth, main = "Depth")
-
-boxplot(data$sig, main = "Significance")
-
-
-#split the data into testing and training data sets
-
-set.seed(123) # for reproducible results
-
-train <- sample(1:nrow(data), nrow(data)*(2/3))
-
-# Use the train index set to split the dataset
-
-#  data.train for building the model
-
-#  data.test for testing the model
-
-data.train <- data[train, ]   # 521 rows
-
-data.test <- data[-train, ]   # the other 261 rows
-
-########### Classification Tree with rpart ########### 
-
-library(rpart)
-
-# grow tree
-
-fit <- rpart(cdi ~ magnitude + depth + sig + latitude + longitude,
-             data = data,
-             method = "class",
-              cp = 0.03)
-
-fit 
-
-# plot the tree
-
-library(rpart.plot)
-
-prp(fit, type = 1, extra = 1, varlen = -10, main="Classification Tree for Earthquake") 
-
-# vector of predicted class for each observation in data.train
-
-pred <- predict(fit, data.train, type = "class")
-
-# actual class of each observation in data.train
-
-actual <- data.train$cdi
-
-# build the "confusion matrix"
-
-confusion.matrix <- confusionMatrix(pred, actual, positive = "1")  
-
-confusion.matrix
-
-# data in data.test
-
-data.pred <- predict(fit, data.test, type = "class")
-
-data.actual <- data.test$cdi
-
-cm1 <- confusionMatrix(data.pred, data.actual, positive = "1")
-
-cm1
-
-
-########### Logistic Regression ########### 
-
-logit.reg <- glm(cdi ~ magnitude + depth + sig + latitude + longitude, 
-                 data = data.train, family = "binomial") 
-
-summary(logit.reg)
-
-plot(logit.reg)
-
-
-# compute predicted probabilities for data.train
-
-logitPredict <- predict(logit.reg, data.train, type = "response")
-
-logitPredictClass <- cut(logitPredict, breaks = c(0.03703, 0.21527, 0.69781 ,1), labels = c("-1", "0", "1"))
-
-# evaluate classifier on data.train
-
-actual <- data.train$cdi
-
-predict <- logitPredictClass
-
-confusion.matrix <- confusionMatrix(predict, actual, positive = "1")
-
-confusion.matrix
-
-# compute predicted probabilities for data.test
-
-logitPredict <- predict(logit.reg, data.test, type = "response")
-
-logitPredictClass <- cut(logitPredict, breaks = c(0.03703, 0.21527, 0.69781 ,1), labels = c("-1", "0", "1"))
-
-
-# evaluate classifier on data.test
-
-actual <- data.test$cdi
-
-predict <- logitPredictClass
-
-cm2 <- confusionMatrix(predict, actual, positive = "1")
-
-cm2
-
-########### K-Nearest Neighbors ########### 
-
-library(caret)
-
-# 10-fold cross-validation
-
-ctrl <- trainControl(method = "cv", number = 10) 
-
-knnFit <- train(cdi ~ magnitude + depth + sig + latitude + longitude, 
-                data = data.train, method = "knn", trControl = ctrl, preProcess = c("center","scale"),tuneGrid = expand.grid(k = 1:10))
-
-knnFit
-
-
-# plot the # of neighbors vs. accuracy (based on repeated cross validation)
-
-plot(knnFit)
-
-# Evaluate classifier performance on training data
-
-actual <- data.train$cdi
-
-knnPredict <- predict(knnFit, data.train)
-
-confusion.matrix <- confusionMatrix(knnPredict, actual, positive = "1")
-
-confusion.matrix
-
-# Evaluate classifier performance on testing data
-
-actual <- data.test$cdi
-
-knnPredict <- predict(knnFit, data.test)
-
-cm3 <- confusionMatrix(knnPredict, actual, positive = "1")
-
-cm3
-
-########### Naive Bayes Classifier ########### 
-
-library(e1071)
-
-# run naive bayes
-
-fit.nb <- naiveBayes(cdi ~ magnitude + depth + sig + latitude + longitude, 
-                     data = data.train)
-
-fit.nb
-
-# Evaluate Performance using Confusion Matrix
-
-actual <- data.train$cdi
-
-# predict class probability
-
-nbPredict <- predict(fit.nb, data.train, type = "raw")
-
-# predict class membership
-
-nbPredictClass <- predict(fit.nb, data.train, type = "class")
-
-confusion.matrix <- confusionMatrix(nbPredictClass, actual, positive = "1")
-
-confusion.matrix
-
-# Evaluate Performance using Confusion Matrix
-
-actual <- data.test$cdi
-
-# predict class probability
-
-nbPredict <- predict(fit.nb, data.test, type = "raw")
-
-# predict class membership
-
-nbPredictClass <- predict(fit.nb, data.test, type = "class")
-
-cm4 <- confusionMatrix(nbPredictClass, actual, positive = "1")
-
-cm4
-
-#######   Support Vector Machine   ########
-
-# Fit an SVM model using the linear kernel
-
-model <- svm(cdi ~ magnitude + depth + sig + latitude + longitude, 
-             data = data.train, kernel = "linear")
-
-model
-
-# Make predictions on the train set
-
-pred <- predict(model, data.train)
-
-actual <- data.train$cdi
-
-confusion.matrix <- confusionMatrix(pred, actual, positive = "1")
-
-confusion.matrix
-
-# Make predictions on the test set
-
-pred <- predict(model, data.test)
-
-actual <- data.test$cdi
-
-cm5 <- confusionMatrix(pred, actual, positive = "1")
-
-cm5
-
-##### compare across different methods #### 
-
-# compare across different methods (considering Class: -1 as the "negative" class)
-
-result1 <- rbind(cm1$byClass[1, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm2$byClass[1, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm3$byClass[1, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm4$byClass[1, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm5$byClass[1, c("Sensitivity", "Specificity", "Balanced Accuracy")])
-
-row.names(result1) <- c("Decision Tree", "Logistic Reg", "KNN", "Naive Bayes", "SVM")
-
-result1
-
-# compare across different methods (considering Class: 0 as the "neutral" class)
-
-result2 <- rbind(cm1$byClass[2, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm2$byClass[2, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm3$byClass[2, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm4$byClass[2, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                 cm5$byClass[2, c("Sensitivity", "Specificity", "Balanced Accuracy")])
-
-row.names(result2) <- c("Decision Tree", "Logistic Reg", "KNN", "Naive Bayes", "SVM")
-
-result2
-
-# compare across different methods (considering Class: 1 as the "positive" class)
-
-result3 <- rbind(cm1$byClass[3, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                cm2$byClass[3, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                cm3$byClass[3, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                cm4$byClass[3, c("Sensitivity", "Specificity", "Balanced Accuracy")],
-                cm5$byClass[3, c("Sensitivity", "Specificity", "Balanced Accuracy")])
-
-row.names(result3) <- c("Decision Tree", "Logistic Reg", "KNN", "Naive Bayes", "SVM")
-
-result3
-
+Education and Awareness: The model can be used to inform and raise awareness among locals in locations where there is a higher likelihood of an earthquake about the necessary precautions and emergency plans to prevent harm and save lives.
